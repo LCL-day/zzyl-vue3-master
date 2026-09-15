@@ -1,7 +1,10 @@
 <template>
   <div class="login">
     <el-form ref="loginRef" :model="loginForm" :rules="loginRules" class="login-form">
-      <h3 class="title">若依后台管理系统</h3>
+      <div class="login-brand">
+        <img src="/logo.png" class="login-brand__logo" alt="知味仓" />
+        <h3 class="title">知味仓</h3>
+      </div>
       <el-form-item prop="username">
         <el-input
           v-model="loginForm.username"
@@ -40,7 +43,10 @@
           <img :src="codeUrl" @click="getCode" class="login-code-img"/>
         </div>
       </el-form-item>
-      <el-checkbox v-model="loginForm.rememberMe" style="margin:0px 0px 25px 0px;">记住密码</el-checkbox>
+      <div class="login-options">
+        <el-checkbox v-model="loginForm.rememberMe">记住密码</el-checkbox>
+        <el-link v-if="registerEnabled" type="primary" :underline="false" @click="goRegister">注册账号</el-link>
+      </div>
       <el-form-item style="width:100%;">
         <el-button
           :loading="loading"
@@ -52,20 +58,18 @@
           <span v-if="!loading">登 录</span>
           <span v-else>登 录 中...</span>
         </el-button>
-        <div style="float: right;" v-if="register">
-          <router-link class="link-type" :to="'/register'">立即注册</router-link>
-        </div>
       </el-form-item>
     </el-form>
     <!--  底部  -->
     <div class="el-login-footer">
-      <span>Copyright © 2018-2023 ruoyi.vip All Rights Reserved.</span>
+      <span>Copyright © 2026 知味仓 All Rights Reserved.</span>
     </div>
   </div>
 </template>
 
 <script setup>
 import { getCodeImg } from "@/api/login";
+import { getRegisterEnabled } from "@/api/food/app";
 import Cookies from "js-cookie";
 import { encrypt, decrypt } from "@/utils/jsencrypt";
 import useUserStore from '@/store/modules/user'
@@ -91,15 +95,25 @@ const loginRules = {
 
 const codeUrl = ref("");
 const loading = ref(false);
-// 验证码开关
+// 验证码开关（后端关闭后此处为 false，登录不再需要验证码）
 const captchaEnabled = ref(true);
-// 注册开关
-const register = ref(false);
+// 是否开放注册
+const registerEnabled = ref(false);
 const redirect = ref(undefined);
 
 watch(route, (newRoute) => {
     redirect.value = newRoute.query && newRoute.query.redirect;
+    // 从注册页返回时带过来的账号，自动填入
+    const name = newRoute.query && newRoute.query.username;
+    if (name) {
+      loginForm.value.username = name;
+      loginForm.value.password = "";
+    }
 }, { immediate: true });
+
+function goRegister() {
+  router.push("/register");
+}
 
 function handleLogin() {
   proxy.$refs.loginRef.validate(valid => {
@@ -158,8 +172,18 @@ function getCookie() {
   };
 }
 
+// 查询是否开放注册，决定是否显示「注册账号」入口
+function getRegisterState() {
+  getRegisterEnabled().then(res => {
+    registerEnabled.value = res.data === true;
+  }).catch(() => {
+    registerEnabled.value = false;
+  });
+}
+
 getCode();
 getCookie();
+getRegisterState();
 </script>
 
 <style lang='scss' scoped>
@@ -171,10 +195,26 @@ getCookie();
   background-image: url("../assets/images/login-background.jpg");
   background-size: cover;
 }
+.login-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 24px 0;
+
+  &__logo {
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    box-shadow: 0 4px 12px rgba(255, 122, 69, 0.28);
+  }
+}
 .title {
-  margin: 0px auto 30px auto;
+  margin: 0;
   text-align: center;
-  color: #707070;
+  font-size: 22px;
+  letter-spacing: 2px;
+  color: #303133;
 }
 
 .login-form {
@@ -198,6 +238,15 @@ getCookie();
   font-size: 13px;
   text-align: center;
   color: #bfbfbf;
+}
+.login-options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 22px 0;
+  .el-link {
+    font-size: 13px;
+  }
 }
 .login-code {
   width: 33%;

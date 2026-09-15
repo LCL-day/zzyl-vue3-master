@@ -35,6 +35,11 @@ export default defineConfig(({ mode, command }) => {
           // target: 'https://api.wzs.pub/mock/13',
           changeOrigin: true,
           rewrite: (p) => p.replace(/^\/dev-api/, '')
+        },
+        // 上传的图片等静态资源由后端 /profile/** 提供
+        '/profile': {
+          target: 'http://localhost:8080',
+          changeOrigin: true
         }
       }
     },
